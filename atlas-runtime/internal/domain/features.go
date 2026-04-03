@@ -21,6 +21,7 @@ import (
 	"atlas-runtime-go/internal/customskills"
 	"atlas-runtime-go/internal/features"
 	"atlas-runtime-go/internal/forge"
+	"atlas-runtime-go/internal/logstore"
 	"atlas-runtime-go/internal/skills"
 	"atlas-runtime-go/internal/storage"
 )
@@ -934,6 +935,12 @@ func (d *FeaturesDomain) doForgeInstall(w http.ResponseWriter, id string, enable
 		return
 	}
 
+	// Generate the custom-skill executable so the agent can actually call it.
+	if err := forge.GenerateAndInstallCustomSkill(d.supportDir, *proposal); err != nil {
+		// Non-fatal: the UI record is saved; agent just won't have a callable tool yet.
+		logstore.Write("warn", "forge/install: codegen failed for "+proposal.SkillID+": "+err.Error(), nil)
+	}
+
 	// Optionally enable in go-skill-states.json.
 	if enable {
 		features.SetForgeSkillState(d.supportDir, proposal.SkillID, "enabled")
@@ -963,6 +970,11 @@ func (d *FeaturesDomain) forgeUninstall(w http.ResponseWriter, r *http.Request) 
 	if !found {
 		writeError(w, http.StatusNotFound, "installed skill not found: "+skillID)
 		return
+	}
+
+	// Remove the generated custom-skill directory so the agent stops seeing it.
+	if err := forge.RemoveCustomSkillDir(d.supportDir, skillID); err != nil {
+		logstore.Write("warn", "forge/uninstall: could not remove custom skill dir for "+skillID+": "+err.Error(), nil)
 	}
 
 	// Remove from skill states so it no longer appears as enabled.

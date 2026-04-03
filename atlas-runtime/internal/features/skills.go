@@ -457,6 +457,13 @@ func customManifestToRecord(manifest customskills.CustomSkillManifest, states sk
 		version = "1.0"
 	}
 
+	source := manifest.Source
+	if source == "" {
+		source = "custom"
+	}
+	category := source // "forge" or "custom" — both make sense as category
+	tag := source
+
 	return SkillRecord{
 		Manifest: SkillManifestInfo{
 			ID:             manifest.ID,
@@ -466,10 +473,10 @@ func customManifestToRecord(manifest customskills.CustomSkillManifest, states sk
 			LifecycleState: lifecycleState,
 			RiskLevel:      "medium",
 			IsUserVisible:  true,
-			Category:       "custom",
-			Source:         "custom",
+			Category:       category,
+			Source:         source,
 			Capabilities:   []string{},
-			Tags:           []string{"custom"},
+			Tags:           []string{tag},
 		},
 		Actions: actions,
 	}

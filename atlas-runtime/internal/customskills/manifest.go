@@ -36,7 +36,11 @@ type CustomSkillManifest struct {
 	Version     string              `json:"version"`
 	Description string              `json:"description"`
 	Author      string              `json:"author,omitempty"`
-	Actions     []CustomSkillAction `json:"actions"`
+	// Source, when set in skill.json, overrides the default "custom" source tag
+	// returned by features.ListSkills. Forge-generated skills set this to "forge"
+	// so they continue to appear with the Forge badge in the UI.
+	Source  string              `json:"source,omitempty"`
+	Actions []CustomSkillAction `json:"actions"`
 	// SkillDir is populated by ListCustomManifests — not present in skill.json.
 	SkillDir string `json:"-"`
 }
