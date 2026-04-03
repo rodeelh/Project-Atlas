@@ -432,23 +432,9 @@ export function Skills() {
 
               return (
                 <div key={group.key} style={{ marginBottom: '20px' }}>
-                  <div class="skill-group-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <div>
-                      <span>{group.label}</span>
-                      {group.sub && <p class="skill-group-sub">{group.sub}</p>}
-                    </div>
-                    {isCustomGroup && (
-                      <button
-                        class="btn btn-primary btn-sm"
-                        disabled={customInstalling}
-                        onClick={installCustomSkill}
-                        style={{ flexShrink: 0, marginTop: '2px' }}
-                      >
-                        {customInstalling
-                          ? <span class="spinner" style={{ width: '11px', height: '11px' }} />
-                          : '+ Install Skill'}
-                      </button>
-                    )}
+                  <div class="skill-group-header">
+                    <span>{group.label}</span>
+                    {group.sub && <p class="skill-group-sub">{group.sub}</p>}
                   </div>
 
                   {/* Install feedback */}
