@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .bg   { fill: #111111; }
+      .a    { stroke: #ffffff; }
+      @media (prefers-color-scheme: light) {
+        .bg { fill: #efefef; }
+        .a  { stroke: #111111; }
+      }
+    </style>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect class="bg" width="32" height="32" rx="7"/>
+  <g class="a" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#s)">
+    <line x1="18.5" y1="5.5" x2="5.5" y2="26.5"/>
+    <line x1="18.5" y1="5.5" x2="22.5" y2="26.5"/>
+    <line x1="11.5" y1="17.5" x2="20.5" y2="17.5"/>
+  </g>
+</svg>

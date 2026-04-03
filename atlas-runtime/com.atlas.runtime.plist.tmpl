@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>Atlas</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/Library/Application Support/Atlas/Atlas</string>
+        <string>-web-dir</string>
+        <string>__HOME__/Library/Application Support/Atlas/web</string>
+    </array>
+
+    <!-- Start immediately on login and after each boot. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart on crash or non-zero exit; stay stopped after a deliberate stop. -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/Atlas/runtime.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/Atlas/runtime-error.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/Library/Application Support/Atlas</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>__HOME__</string>
+    </dict>
+</dict>
+</plist>

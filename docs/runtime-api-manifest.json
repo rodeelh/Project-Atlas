@@ -1,0 +1,185 @@
+{
+  "version": "v1-draft",
+  "updatedAt": "2026-03-31",
+  "phaseStatus": "phase1-complete",
+  "sourceFiles": [
+    "/Users/ralhassan/Desktop/CODING/Project Atlas/Atlas/atlas-core/Sources/AtlasCore/AgentRuntime.swift",
+    "/Users/ralhassan/Desktop/CODING/Project Atlas/Atlas/atlas-web/src/api/contracts.ts"
+  ],
+  "routeGroups": [
+    {
+      "id": "auth",
+      "routes": [
+        { "method": "GET", "path": "/auth/token" },
+        { "method": "GET", "path": "/auth/bootstrap" },
+        { "method": "GET", "path": "/auth/ping" },
+        { "method": "GET", "path": "/auth/remote-gate" },
+        { "method": "GET", "path": "/auth/remote" },
+        { "method": "GET", "path": "/auth/remote-status" },
+        { "method": "GET", "path": "/auth/remote-key" },
+        { "method": "DELETE", "path": "/auth/remote-sessions" }
+      ]
+    },
+    {
+      "id": "web",
+      "routes": [
+        { "method": "GET", "path": "/" },
+        { "method": "GET", "path": "/web" },
+        { "method": "GET", "path": "/web/*" }
+      ]
+    },
+    {
+      "id": "runtime",
+      "routes": [
+        { "method": "GET", "path": "/status" },
+        { "method": "GET", "path": "/logs" },
+        { "method": "GET", "path": "/config" },
+        { "method": "PUT", "path": "/config" },
+        { "method": "GET", "path": "/onboarding" },
+        { "method": "PUT", "path": "/onboarding" },
+        { "method": "GET", "path": "/models" },
+        { "method": "GET", "path": "/models/available" },
+        { "method": "POST", "path": "/models/refresh" }
+      ]
+    },
+    {
+      "id": "credentials",
+      "routes": [
+        { "method": "GET", "path": "/api-keys" },
+        { "method": "POST", "path": "/api-keys" },
+        { "method": "POST", "path": "/api-keys/invalidate-cache" },
+        { "method": "DELETE", "path": "/api-keys" }
+      ]
+    },
+    {
+      "id": "chat",
+      "routes": [
+        { "method": "POST", "path": "/message" },
+        { "method": "GET", "path": "/message/stream" },
+        { "method": "GET", "path": "/conversations" },
+        { "method": "GET", "path": "/conversations/search" },
+        { "method": "GET", "path": "/conversations/{id}" }
+      ]
+    },
+    {
+      "id": "approvals",
+      "routes": [
+        { "method": "GET", "path": "/approvals" },
+        { "method": "POST", "path": "/approvals/{toolCallID}/approve" },
+        { "method": "POST", "path": "/approvals/{toolCallID}/deny" },
+        { "method": "GET", "path": "/action-policies" },
+        { "method": "PUT", "path": "/action-policies/{actionID}" },
+        { "method": "POST", "path": "/action-policies/{actionID}" }
+      ]
+    },
+    {
+      "id": "skills-memory-mind",
+      "routes": [
+        { "method": "GET", "path": "/skills" },
+        { "method": "POST", "path": "/skills/{id}/enable" },
+        { "method": "POST", "path": "/skills/{id}/disable" },
+        { "method": "POST", "path": "/skills/{id}/validate" },
+        { "method": "GET", "path": "/mind" },
+        { "method": "PUT", "path": "/mind" },
+        { "method": "POST", "path": "/mind/regenerate" },
+        { "method": "GET", "path": "/skills-memory" },
+        { "method": "PUT", "path": "/skills-memory" }
+      ]
+    },
+    {
+      "id": "memories",
+      "routes": [
+        { "method": "GET", "path": "/memories" },
+        { "method": "POST", "path": "/memories" },
+        { "method": "GET", "path": "/memories/search" },
+        { "method": "GET", "path": "/memories/{id}" },
+        { "method": "POST", "path": "/memories/{id}/update" },
+        { "method": "POST", "path": "/memories/{id}/confirm" },
+        { "method": "POST", "path": "/memories/{id}/delete" }
+      ]
+    },
+    {
+      "id": "communications",
+      "routes": [
+        { "method": "GET", "path": "/communications" },
+        { "method": "GET", "path": "/communications/channels" },
+        { "method": "GET", "path": "/communications/platforms/{platform}/setup" },
+        { "method": "PUT", "path": "/communications/platforms/{platform}" },
+        { "method": "POST", "path": "/communications/platforms/{platform}/validate" },
+        { "method": "GET", "path": "/telegram/chats" }
+      ]
+    },
+    {
+      "id": "file-access",
+      "routes": [
+        { "method": "GET", "path": "/skills/file-system/roots" },
+        { "method": "POST", "path": "/skills/file-system/roots" }
+      ]
+    },
+    {
+      "id": "automations",
+      "routes": [
+        { "method": "GET", "path": "/automations" },
+        { "method": "POST", "path": "/automations" },
+        { "method": "GET", "path": "/automations/file" },
+        { "method": "PUT", "path": "/automations/file" },
+        { "method": "GET", "path": "/automations/{id}" },
+        { "method": "PUT", "path": "/automations/{id}" },
+        { "method": "DELETE", "path": "/automations/{id}" },
+        { "method": "GET", "path": "/automations/{id}/runs" },
+        { "method": "POST", "path": "/automations/{id}/enable" },
+        { "method": "POST", "path": "/automations/{id}/disable" },
+        { "method": "POST", "path": "/automations/{id}/run" }
+      ]
+    },
+    {
+      "id": "workflows",
+      "routes": [
+        { "method": "GET", "path": "/workflows" },
+        { "method": "POST", "path": "/workflows" },
+        { "method": "GET", "path": "/workflows/runs" },
+        { "method": "POST", "path": "/workflows/runs/{runID}/approve" },
+        { "method": "POST", "path": "/workflows/runs/{runID}/deny" },
+        { "method": "GET", "path": "/workflows/{id}" },
+        { "method": "PUT", "path": "/workflows/{id}" },
+        { "method": "DELETE", "path": "/workflows/{id}" },
+        { "method": "GET", "path": "/workflows/{id}/runs" },
+        { "method": "POST", "path": "/workflows/{id}/run" }
+      ]
+    },
+    {
+      "id": "forge",
+      "routes": [
+        { "method": "GET", "path": "/forge/researching" },
+        { "method": "GET", "path": "/forge/proposals" },
+        { "method": "POST", "path": "/forge/proposals" },
+        { "method": "GET", "path": "/forge/installed" },
+        { "method": "POST", "path": "/forge/installed/{skillID}/uninstall" },
+        { "method": "POST", "path": "/forge/proposals/{id}/install" },
+        { "method": "POST", "path": "/forge/proposals/{id}/install-enable" },
+        { "method": "POST", "path": "/forge/proposals/{id}/reject" }
+      ]
+    },
+    {
+      "id": "dashboards",
+      "routes": [
+        { "method": "GET", "path": "/dashboards/proposals" },
+        { "method": "POST", "path": "/dashboards/proposals" },
+        { "method": "POST", "path": "/dashboards/install" },
+        { "method": "POST", "path": "/dashboards/reject" },
+        { "method": "GET", "path": "/dashboards/installed" },
+        { "method": "DELETE", "path": "/dashboards/installed" },
+        { "method": "POST", "path": "/dashboards/access" },
+        { "method": "POST", "path": "/dashboards/pin" },
+        { "method": "POST", "path": "/dashboards/widgets/execute" }
+      ]
+    },
+    {
+      "id": "utility",
+      "routes": [
+        { "method": "GET", "path": "/link-preview" },
+        { "method": "GET", "path": "/api-validation/history" }
+      ]
+    }
+  ]
+}

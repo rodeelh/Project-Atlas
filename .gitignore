@@ -1,0 +1,35 @@
+.DS_Store
+.build/
+.swiftpm/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# OS/editor clutter
+.idea/
+.vscode/
+*.swp
+
+# Runtime state and local config
+atlas-config.json
+atlas-runtime/Atlas
+atlas-runtime/atlas-runtime
+atlas-runtime/atlas.sqlite3
+atlas-runtime/config.json
+atlas-runtime/go-runtime-config.json
+atlas-runtime/models/
+
+# TUI local artifacts
+atlas-tui/atlas
+atlas-tui/config.json
+
+# Web UI build artifacts
+atlas-web/node_modules/
+atlas-web/dist/
+
+# Legacy or accidental duplicates
+* 2.css
+* 2.js
+* 2.png
+* 2.svg
+* 2.html
