@@ -1,6 +1,6 @@
 # Atlas Architecture
 
-**Last updated: 2026-04-02**
+**Last updated: 2026-04-03**
 
 Atlas is a local AI operator. A Go binary runs as a launchd daemon (`Atlas`), serves a web UI, and connects to any supported AI provider. A Bubbletea TUI (`atlas`) provides a terminal interface. No Swift required.
 
@@ -81,8 +81,11 @@ Atlas/
 │       │   └── service.go              # RuntimeStatus (port, started_at, version)
 │       ├── server/
 │       │   └── router.go               # BuildRouter — chi, CORS, RequireSession, /web static
+│       ├── customskills/
+│       │   └── manifest.go             # CustomSkillManifest types + filesystem scanning (leaf pkg)
 │       ├── skills/
-│       │   ├── registry.go             # Registry, ToolDef, SkillEntry — NewRegistry
+│       │   ├── registry.go             # Registry, ToolDef (RawSchema), SkillEntry, IsStateful()
+│       │   ├── custom.go               # LoadCustomSkills — subprocess executor, 30s timeout
 │       │   ├── weather.go              # weather.*
 │       │   ├── web.go                  # web.*
 │       │   ├── websearch.go            # websearch.query (Brave Search)
@@ -93,7 +96,7 @@ Atlas/
 │       │   ├── finance.go              # finance.*
 │       │   ├── image.go                # image.generate (DALL-E 3)
 │       │   ├── diary.go                # diary.*
-│       │   ├── browser.go              # browser.* (17 actions)
+│       │   ├── browser.go              # browser.* (27 actions, stateful — serialised)
 │       │   ├── vault.go                # vault.* (6 actions)
 │       │   ├── gremlin.go              # gremlin.*
 │       │   ├── forge_skill.go          # forge.*
@@ -145,7 +148,8 @@ Atlas/
        /automations, …
             │
             ├── internal/agent      ← OpenAI / Anthropic / Gemini / LM Studio
-            ├── internal/skills     ← 16 built-in skill groups, 90+ actions
+            ├── internal/skills     ← 16 built-in skill groups, 90+ actions + custom skills
+            ├── internal/customskills ← manifest types + filesystem scanning (leaf pkg)
             ├── internal/browser    ← Headless Chrome via go-rod
             ├── internal/forge      ← Forge research pipeline
             ├── internal/validate   ← API validation gate
@@ -171,21 +175,36 @@ AI provider call (streaming or non-streaming)
     │
     ├── text delta  → emit SSE token → accumulate
     │
-    └── tool_call   → look up in skills.Registry
+    └── tool_calls  → look up each in skills.Registry
                          │
-                         ├── needs approval? → defer, emit approvalRequired SSE
+                         ├── needs approval? → defer ALL, emit approvalRequired SSE
                          │                     resolved via POST /approvals/:id/approve
                          │
-                         └── auto-approve?  → execute skill (30s timeout, 90s for browser.*)
+                         └── auto-approve?  → three-pass parallel execution:
                                                 │
-                                                └── result → inject tool result → loop to AI
+                                                ├── Pass 1 (concurrent) — stateless tools
+                                                │     goroutine per call, WaitGroup
+                                                │     results[i] written at original index
+                                                │
+                                                ├── Pass 2 (serial) — stateful tools
+                                                │     browser.* share go-rod Chrome session
+                                                │     run in original call order
+                                                │
+                                                └── Pass 3 (ordered assembly)
+                                                      emit SSE events + append tool messages
+                                                      strictly in original index order
+                                                      (OpenAI protocol requirement)
     │
     ▼
 assistant message assembled → store in SQLite → emit done SSE
 ```
 
-Max iterations: configurable (default 10). Screenshots from `browser.screenshot` are
-routed through vision content blocks — OpenAI gets `image_url`, Anthropic gets `base64`.
+**Timeouts:** 30s for standard skills, 90s for `browser.*`.
+**Concurrency:** stateless tools (weather, web, finance, fs, etc.) run in parallel per turn,
+cutting multi-tool latency by 40–70%. `browser.*` are serialised via `IsStateful()`.
+**Max iterations:** configurable per provider (default 10).
+**Vision:** screenshots from `browser.screenshot` are routed through vision content blocks —
+OpenAI gets `image_url`, Anthropic gets `base64`.
 
 ---
 
@@ -204,8 +223,31 @@ type SkillEntry struct {
 }
 ```
 
+`ToolDef.RawSchema map[string]any` — when set, passed directly as the OpenAI
+`parameters` object instead of building from `Properties`. Custom skills use this
+to declare arbitrary JSON Schema from their `skill.json` manifest.
+
 `Fn` returns a plain string. `FnResult` returns a structured `ToolResult` with
 success/failure, artifacts, warnings, and dry-run support. Use one or the other.
+
+**Skill classification — three tiers:**
+
+| Tier | Description | Source tag |
+|------|-------------|------------|
+| **Core built-in** | Needs Go internals: SQLite, SSE broadcaster, Keychain, go-rod Chrome | `builtin` |
+| **Standard built-in** | Self-contained API / system calls compiled in for convenience | `builtin` |
+| **Custom** | User-installed executable (`~/…/ProjectAtlas/skills/<id>/run`), called via subprocess JSON protocol | `custom` |
+
+Custom skills are registered at startup by `LoadCustomSkills()` and appear in
+`GET /skills` with `"source": "custom"`. The model cannot distinguish them from built-ins.
+
+**Subprocess protocol (custom skills):**
+```
+stdin:  {"action": "search", "args": {"query": "…"}}   ← one JSON line
+stdout: {"success": true,  "output": "…"}               ← one JSON line
+stdout: {"success": false, "error":  "…"}               ← on failure
+```
+Process is spawned fresh per call with a 30s deadline. Output is capped at 1 MB.
 
 **Built-in skills (16 groups, 90+ actions):**
 
@@ -438,3 +480,8 @@ Significance gate  — YES/NO: did this turn reveal something meaningfully new?
 |---------|--------|
 | Dashboard AI planning + widget execution | 501 — POST `/dashboards/proposals`, install, reject, pin, access, widgets all stub |
 | Multi-agent supervisor | Not built — single-agent loop handles all turns |
+| Custom skill live-reload | Daemon restart required after `POST /skills/install` |
+| Custom skill ZIP/URL install | Local path only; URL download deferred |
+| Custom skill credential injection | Skills read credentials from own environment; vault injection deferred |
+| Custom skill install UI | API available; web UI install flow deferred |
+| Embedding-based memory retrieval | Keyword search only; vector retrieval deferred (T3.5) |

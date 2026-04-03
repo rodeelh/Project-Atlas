@@ -13,92 +13,24 @@ Keep the Engine LM tab up to date with the latest models and tooling.
 
 ## Architecture Improvements
 
-Two high-priority improvements planned for the next sprint. Both are strictly additive — no existing skill, route, or config field is modified or removed.
+---
+
+### ✅ ARC-1 — Parallel Tool Execution — SHIPPED 2026-04-03
+
+Stateless tool calls (weather, web, finance, fs, etc.) now run concurrently within a single agent iteration using a `sync.WaitGroup`. Stateful tools (`browser.*`) continue to run serially to protect the shared go-rod Chrome session. Results are collected into an index-preserving slice and assembled in original call order before appending to messages (OpenAI protocol requirement).
+
+**Files changed:** `internal/skills/registry.go` · `internal/agent/loop.go` · `internal/agent/loop_parallel_test.go`
+**Tests:** 6 passing — concurrency timing, result ordering, stateful serialisation, mixed batches, one-error-doesn't-block-others, single-tool regression.
 
 ---
 
-### ARC-1 — Parallel Tool Execution
+### ✅ ARC-2 — Custom Skills — SHIPPED 2026-04-03
 
-**Goal:** Cut multi-tool turn latency by 40–70% by running independent skill calls concurrently instead of serially.
+Users can now install new skills as executables (any language) without recompiling Atlas. Skills appear in `GET /skills` with `"source": "custom"` and are invisible to the model (same tool-call protocol as built-ins). A new leaf package `internal/customskills` holds manifest types and filesystem scanning, avoiding the `skills → features → skills` import cycle.
 
-**Key constraint:** Browser skills (`browser.*`) share a stateful go-rod Chrome process and must remain sequential. All other skills are stateless per-call and safe to parallelise.
-
-**Implementation phases:**
-
-**Phase 1.1 — `IsStateful()` method on Registry** (`internal/skills/registry.go`)
-- Returns `true` for any `browser.*` or `browser__*` skill
-- Centralises the check — future stateful skill groups (e.g. terminal sessions) add one line here
-
-**Phase 1.2 — Parallel execution block in `loop.go`** (`internal/agent/loop.go`)
-- Before the tool execution loop, check if any call in `canRun` is stateful
-- If yes → existing serial path (unchanged)
-- If no → fan out goroutines using index-preserving `results := make([]toolResult, len(canRun))`; each goroutine writes to `results[i]`; `wg.Wait()` then iterate in original order
-- `tool_call` SSE events fire immediately as goroutines start (accurate — user sees all tools starting)
-- `tool_finished`/`tool_failed` SSE events fire inside each goroutine as they complete (also accurate)
-- `OAIMessage` appends happen in the outer loop after `wg.Wait()` — strictly ordered (required by OpenAI spec)
-
-**Phase 1.3 — Tests**
-- Two mock skills sleeping 100ms each: parallel path should complete in ~100ms, not 200ms
-- Results appended in original call order regardless of goroutine completion order
-- Batch with one `browser.*` call falls through to serial path
-- One skill errors, others succeed — both paths append correct tool messages
-
-**Rollout:** Single PR. Optional `LoopConfig.ParallelTools bool` feature flag for safe rollout if needed; remove after one week of stable operation.
-
----
-
-### ARC-2 — Custom Skills
-
-**Goal:** Allow users to install new skills as executables (any language) without recompiling Atlas. Skills appear in `GET /skills` with `"source": "custom"`. From the model's perspective there is no difference from built-ins.
-
-**See:** CLAUDE.md "Custom Skills" section for protocol spec, manifest format, and directory layout.
-
-**Implementation phases:**
-
-**Phase 2.1 — Manifest + protocol** (design only — already defined in CLAUDE.md)
-- `skill.json` manifest format finalised
-- Subprocess JSON protocol (one line in, one line out) finalised
-
-**Phase 2.2 — `PluginLoader` in `internal/skills/`** — new file `internal/skills/custom.go`
-- `LoadCustomSkills(skillsDir string) error` scans for `skill.json` manifests
-- Registers each action as a `SkillEntry` with a `FnResult` closure that spawns the subprocess
-- Invalid manifests: log warn + skip, never crash
-- Subprocess executor: `exec.CommandContext` with 30s deadline, write JSON to stdin, read JSON from stdout, size-limit output to 1 MB
-
-**Phase 2.3 — Wire into `main.go`**
-- `skillsDir := filepath.Join(config.SupportDir(), "skills")`
-- `os.MkdirAll(skillsDir, 0755)` on startup
-- `skillsRegistry.LoadCustomSkills(skillsDir)` after `NewRegistry`, before HTTP server starts
-
-**Phase 2.4 — HTTP routes** (`internal/domain/features.go` + `internal/server/router.go`)
-- `GET  /skills/custom` — list installed custom skills (id, name, version, actions)
-- `POST /skills/install` — install from local path or URL (download zip → verify `skill.json` exists → move to `skillsDir/<id>`)
-- `DELETE /skills/:id` — remove custom skill directory
-
-**Phase 2.5 — `features/skills.go` listing**
-- Extend `ListSkills()` to include custom skills with `"source": "custom"`
-- Custom skills appear in `GET /skills` alongside built-in (`"source": "builtin"`) and forge (`"source": "forge"`)
-
-**Phase 2.6 — Web UI** (Skills screen)
-- Custom skills appear in the existing Skills list with a `Custom` badge (same as `Forge` badge pattern)
-- Install button: URL or local path input
-- Remove button per custom skill
-- No separate screen needed
-
-**Phase 2.7 — Tests**
-- Shell script skill that echoes JSON: verify registration, execution, correct output
-- Non-zero exit: graceful error wrapping
-- Timeout: process killed, error returned
-- Missing required manifest fields: skipped with warn log, no crash
-- End-to-end: `POST /skills/install` → appears in `GET /skills` → agent loop calls it
-
-**Rollout sequencing:**
-```
-Week 1  ARC-1 Parallel tool execution (Phase 1.1–1.3) — ship, soak 1 week
-Week 2  ARC-2 Phase 2.1–2.3 — backend + subprocess executor only; test with shell script
-Week 3  ARC-2 Phase 2.4–2.5 — HTTP routes + skill listing
-Week 4  ARC-2 Phase 2.6–2.7 — Web UI + hardening (output size limit, action_class enforcement)
-```
+**Files changed:** `internal/customskills/manifest.go` (new) · `internal/skills/custom.go` (new) · `internal/skills/registry.go` · `internal/features/skills.go` · `internal/domain/features.go` · `cmd/atlas-runtime/main.go` · `atlas-web/src/screens/Skills.tsx` · `atlas-web/src/api/client.ts`
+**New routes:** `GET /skills/custom` · `POST /skills/install` · `DELETE /skills/:id`
+**Pending:** live-reload without daemon restart · ZIP/URL install · credential injection from vault · install UI in Skills screen.
 
 ---
 
