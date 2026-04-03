@@ -1,16 +1,10 @@
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import { api } from '../api/client'
 import { PageHeader } from '../components/PageHeader'
 import { ErrorBanner } from '../components/ErrorBanner'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
-const RefreshIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M2.5 8a5.5 5.5 0 0 1 9.5-3.8" /><polyline points="13.5,2.5 13.5,6 10,6" />
-    <path d="M13.5 8a5.5 5.5 0 0 1-9.5 3.8" /><polyline points="2.5,13.5 2.5,10 6,10" />
-  </svg>
-)
 const EditIcon = () => (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2l2 2-7 7H3v-2L10 2z" />
@@ -145,7 +139,6 @@ export function Mind() {
   const [editing, setEditing]   = useState(false)
   const [editText, setEditText] = useState('')
   const [saving, setSaving]     = useState(false)
-  const intervalRef = useRef<number | null>(null)
 
   // SKILLS.md
   const [skillsMem, setSkillsMem]         = useState<string | null>(null)
@@ -201,8 +194,6 @@ export function Mind() {
   useEffect(() => {
     load()
     loadSkillsMem()
-    intervalRef.current = setInterval(load, 30000) as unknown as number
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   const sections = content ? parseMindSections(content) : []
@@ -216,16 +207,11 @@ export function Mind() {
       <PageHeader
         title="Mind"
         subtitle="Atlas's living inner world — updated after every conversation"
-        actions={<>
-          {!editing && (
-            <button class="btn btn-ghost btn-sm" onClick={() => { setEditText(content); setEditing(true) }}>
-              <EditIcon /> Edit MIND.md
-            </button>
-          )}
-          <button class="btn btn-primary btn-sm" onClick={load} disabled={loading}>
-            <RefreshIcon /> Refresh
+        actions={!editing && (
+          <button class="btn btn-ghost btn-sm" onClick={() => { setEditText(content); setEditing(true) }}>
+            <EditIcon /> Edit MIND.md
           </button>
-        </>}
+        )}
       />
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
