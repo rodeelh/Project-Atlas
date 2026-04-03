@@ -98,7 +98,7 @@ const POLICY_LABELS: Record<string, string> = {
 
 /* ── Skill grouping ─────────────────────────────────────── */
 
-type SkillGroupKey = 'capabilities' | 'system' | 'automation' | 'custom' | 'diagnostics'
+type SkillGroupKey = 'capabilities' | 'system' | 'automation' | 'custom'
 
 const SKILL_GROUPS: Array<{ key: SkillGroupKey; label: string; sub: string }> = [
   { key: 'capabilities', label: 'Capabilities',    sub: 'What Atlas can do for you' },
@@ -114,7 +114,7 @@ function classifySkill(skill: SkillRecord): SkillGroupKey | 'hidden' {
   // Forge-generated skills show the purple Forge badge; user-installed show teal Custom badge.
   if (source === 'custom' || source === 'forge') return 'custom'
   if (id === 'gremlin-management') return 'automation'
-  if (id === 'atlas.info') return 'diagnostics'
+  if (id === 'atlas.info') return 'hidden'
   if (category === 'system' || category === 'productivity') return 'system'
   if (category === 'automation') return 'automation'
   return 'capabilities'
@@ -470,16 +470,6 @@ export function Skills() {
                 </div>
               )
             })}
-            {(grouped['diagnostics'] ?? []).length > 0 && (
-              <div style={{ marginBottom: '20px', opacity: 0.55 }}>
-                <div class="skill-group-header">
-                  <span>Diagnostics</span>
-                </div>
-                <div class="card">
-                  {(grouped['diagnostics'] ?? []).map((skill, i) => renderSkillRow(skill, i, grouped['diagnostics']!.length))}
-                </div>
-              </div>
-            )}
           </>
         )
       })()}
